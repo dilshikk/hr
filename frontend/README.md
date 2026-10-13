@@ -1,5 +1,12 @@
 # Telegram Mini App
 
-React + TypeScript + Vite. Ещё не создано.
+React + TypeScript + Vite. Рабочее место сотрудника: список кандидатов, карточка, смена этапа, добавление.
 
-Планируемая структура: `src/app`, `src/pages/{Home,Vacancies,Application,MyApplication,Interviews}`, `src/components`, `src/features`, `src/services/api.ts`, `src/hooks`, `src/types`, `src/locales` (RU).
+```bash
+cd frontend
+npm install
+npm run dev     # локально, /api проксируется на 127.0.0.1:8000
+npm run build   # сборка в frontend/dist, раздаётся nginx
+```
+
+Открывается только из Telegram (кнопка в боте): вход идёт по initData. Токен сессии хранится только в памяти вкладки.
