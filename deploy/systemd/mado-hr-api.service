@@ -8,7 +8,9 @@ Type=simple
 User=madohr
 WorkingDirectory=/opt/mado_hr/backend
 EnvironmentFile=/etc/mado-hr/mado-hr.env
-ExecStart=/opt/mado_hr/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
+# --proxy-headers + доверие только nginx на 127.0.0.1: реальный IP клиента для ограничения попыток входа.
+# Один процесс (без --workers): счётчик попыток хранится в памяти.
+ExecStart=/opt/mado_hr/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 --proxy-headers --forwarded-allow-ips 127.0.0.1
 Restart=on-failure
 RestartSec=5
 NoNewPrivileges=true

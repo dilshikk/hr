@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import require
 from app.core.database import get_session
 from app.core.permissions import ALL_BRANCHES, Perm, Role, can_access_branch
-from app.models import AuditLog, Candidate, PipelineEvent, User
+from app.models import AuditLog, Candidate, PipelineEvent, User, Vacancy
 from app.schemas.candidate import CandidateIn, CandidateOut, StageIn
 from app.services.pipeline import InvalidTransition, check_transition
 
@@ -46,6 +46,11 @@ async def create_candidate(
 ) -> Candidate:
     if not can_access_branch(user.role, user.branch_id, body.branch_id):
         raise HTTPException(403, "Нет доступа к филиалу")
+    if body.vacancy_id is not None:
+        vacancy = await db.get(Vacancy, body.vacancy_id)
+        # Вакансия должна быть из того же филиала, иначе кандидат «утечёт» в чужой филиал.
+        if not vacancy or vacancy.branch_id != body.branch_id:
+            raise HTTPException(400, "Вакансия не найдена в этом филиале")
     cand = Candidate(**body.model_dump())
     db.add(cand)
     await db.flush()
@@ -71,15 +76,30 @@ async def move_stage(
     db: AsyncSession = Depends(get_session),
 ) -> Candidate:
     cand = await _get_allowed(db, user, candidate_id)
+    old_stage = cand.stage
     try:
-        new_stage = check_transition(cand.stage, body.stage, body.reason)
+        new_stage = check_transition(old_stage, body.stage, body.reason)
     except InvalidTransition as exc:
         raise HTTPException(400, str(exc))
+
+    # Условное обновление: применится, только если этап не успели изменить параллельно.
+    result = await db.execute(
+        update(Candidate)
+        .where(Candidate.id == cand.id, Candidate.stage == old_stage)
+        .values(stage=new_stage.value)
+    )
+    if result.rowcount != 1:
+        await db.rollback()
+        raise HTTPException(409, "Этап уже изменён другим сотрудником. Обновите карточку")
+
     db.add(PipelineEvent(
         candidate_id=cand.id, actor_id=user.id,
-        from_stage=cand.stage, to_stage=new_stage.value, reason=body.reason,
+        from_stage=old_stage, to_stage=new_stage.value, reason=body.reason,
     ))
-    cand.stage = new_stage.value
-    db.add(AuditLog(actor_id=user.id, action="candidate.stage", target=str(cand.id)))
+    db.add(AuditLog(
+        actor_id=user.id, action="candidate.stage",
+        target=f"{cand.id} {old_stage}->{new_stage.value}"[:64],
+    ))
     await db.commit()
+    await db.refresh(cand)
     return cand

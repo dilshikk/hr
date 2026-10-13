@@ -5,7 +5,7 @@
 ## Авторизация
 | Метод | Путь | Описание |
 |---|---|---|
-| POST | `/auth/telegram` | Тело `{init_data}` из Telegram WebApp. Возвращает `{token, role}` |
+| POST | `/auth/telegram` | Тело `{init_data}` из Telegram WebApp. Возвращает `{token, role}`. Не более 10 попыток в минуту с IP (429) |
 | POST | `/auth/logout` | Отзывает текущую сессию |
 | GET | `/me` | Текущий пользователь: id, имя, роль, филиал |
 
@@ -13,9 +13,9 @@
 | Метод | Путь | Право | Описание |
 |---|---|---|---|
 | GET | `/candidates?stage=&limit=&offset=` | read | Список (только свой филиал, кроме Owner/HR Admin) |
-| POST | `/candidates` | write_candidates | Создать: `full_name, phone?, branch_id, vacancy_id?` |
+| POST | `/candidates` | write_candidates | Создать: `full_name, phone?, branch_id, vacancy_id?`; вакансия из другого филиала → 400 |
 | GET | `/candidates/{id}` | read | Карточка; чужой филиал → 404 |
-| POST | `/candidates/{id}/stage` | write_candidates | `{stage, reason}`; недопустимый переход → 400 |
+| POST | `/candidates/{id}/stage` | write_candidates | `{stage, reason}`; недопустимый переход → 400; этап уже изменён другим → 409 |
 
 ## Вакансии
 | Метод | Путь | Право | Описание |
@@ -44,4 +44,4 @@
 `GET /health/live` → `{status: "ok"}`.
 
 ## Коды ошибок
-401 — нет/недействительная сессия; 403 — нет прав или доступ закрыт; 404 — не найдено (в т.ч. чужой филиал); 400 — неверные данные; 409 — конфликт.
+401 — нет/недействительная сессия; 403 — нет прав или доступ закрыт; 404 — не найдено (в т.ч. чужой филиал); 400 — неверные данные; 409 — конфликт; 429 — слишком много попыток.
