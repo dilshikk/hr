@@ -14,3 +14,7 @@ class VacancyOut(BaseModel):
     status: str
 
     model_config = {"from_attributes": True}
+
+
+class VacancyStatusIn(BaseModel):
+    status: str

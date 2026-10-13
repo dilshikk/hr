@@ -6,12 +6,36 @@ import type { Branch, Vacancy } from "../types";
 
 const STATUS_LABELS: Record<string, string> = { draft: "Черновик", open: "Открыта", closed: "Закрыта" };
 
+// Совпадает с backend/app/services/vacancy.py
+const STATUS_ACTIONS: Record<string, { to: string; label: string }[]> = {
+  draft: [{ to: "open", label: "Открыть" }, { to: "closed", label: "Закрыть" }],
+  open: [{ to: "closed", label: "Закрыть" }],
+  closed: [{ to: "open", label: "Открыть снова" }],
+};
+
 export default function VacancyList() {
   const vacancies = useLoad(api.vacancies, "Не удалось загрузить вакансии");
   const branches = useLoad(api.branches, "Не удалось загрузить филиалы");
   const [adding, setAdding] = useState(false);
+  const [busyId, setBusyId] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const branchName = (id: number) => branches.data?.find((b) => b.id === id)?.name ?? "—";
+
+  async function changeStatus(v: Vacancy, to: string) {
+    setBusyId(v.id);
+    setError(null);
+    try {
+      const updated = await api.setVacancyStatus(v.id, to);
+      vacancies.setData((vacancies.data ?? []).map((x) => (x.id === updated.id ? updated : x)));
+      haptic("success");
+    } catch (e: unknown) {
+      haptic("error");
+      setError(errorText(e, "Не удалось сменить статус"));
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   return (
     <section>
@@ -31,18 +55,32 @@ export default function VacancyList() {
         />
       )}
 
-      {vacancies.error && <p className="error">{vacancies.error}</p>}
+      {(vacancies.error || error) && <p className="error">{vacancies.error ?? error}</p>}
       {!vacancies.error && vacancies.data === null && <p className="muted">Загрузка…</p>}
       {vacancies.data?.length === 0 && !adding && <p className="muted center-text">Вакансий пока нет</p>}
 
       <ul className="list">
         {vacancies.data?.map((v) => (
-          <li key={v.id} className="item static">
-            <span className="item-main">
-              <span className="item-name">{v.title}</span>
-              <span className="muted small">{branchName(v.branch_id)}</span>
+          <li key={v.id} className="item static column">
+            <span className="row between full">
+              <span className="item-main">
+                <span className="item-name">{v.title}</span>
+                <span className="muted small">{branchName(v.branch_id)}</span>
+              </span>
+              <span className={v.status === "open" ? "badge stage-hired" : "badge"}>{STATUS_LABELS[v.status] ?? v.status}</span>
             </span>
-            <span className="badge">{STATUS_LABELS[v.status] ?? v.status}</span>
+            <span className="row">
+              {(STATUS_ACTIONS[v.status] ?? []).map((a) => (
+                <button
+                  key={a.to}
+                  className={a.to === "closed" ? "chip" : "chip active"}
+                  disabled={busyId === v.id}
+                  onClick={() => changeStatus(v, a.to)}
+                >
+                  {a.label}
+                </button>
+              ))}
+            </span>
           </li>
         ))}
       </ul>
@@ -96,6 +134,7 @@ function VacancyForm({ branches, onDone, onCancel }: FormProps) {
         Описание
         <textarea value={description} maxLength={5000} placeholder="График, обязанности, условия" onChange={(e) => setDescription(e.target.value)} />
       </label>
+      <p className="muted small">Вакансия создаётся черновиком. Откройте её, чтобы к ней можно было добавлять кандидатов.</p>
       {error && <p className="error">{error}</p>}
       <button className="btn" type="submit" disabled={busy || !title.trim()}>{busy ? "Сохранение…" : "Сохранить"}</button>
       <button className="btn ghost" type="button" onClick={onCancel}>Отмена</button>

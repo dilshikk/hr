@@ -8,6 +8,7 @@ from app.core.permissions import ALL_BRANCHES, Perm, Role, can_access_branch
 from app.models import AuditLog, Candidate, PipelineEvent, User, Vacancy
 from app.schemas.candidate import CandidateIn, CandidateOut, StageIn
 from app.services.pipeline import InvalidTransition, check_transition
+from app.services.vacancy import VacancyStatus
 
 router = APIRouter(prefix="/api/v1/candidates", tags=["candidates"])
 
@@ -51,6 +52,8 @@ async def create_candidate(
         # Вакансия должна быть из того же филиала, иначе кандидат «утечёт» в чужой филиал.
         if not vacancy or vacancy.branch_id != body.branch_id:
             raise HTTPException(400, "Вакансия не найдена в этом филиале")
+        if vacancy.status != VacancyStatus.OPEN:
+            raise HTTPException(400, "Вакансия не открыта")
     cand = Candidate(**body.model_dump())
     db.add(cand)
     await db.flush()

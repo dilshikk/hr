@@ -54,6 +54,7 @@ export const api = {
   vacancies: () => request<Vacancy[]>("/vacancies?limit=100"),
   createVacancy: (body: { title: string; branch_id: number; description: string }) =>
     request<Vacancy>("/vacancies", post(body)),
+  setVacancyStatus: (id: number, status: string) => request<Vacancy>(`/vacancies/${id}/status`, post({ status })),
   branches: () => request<Branch[]>("/branches"),
   createBranch: (name: string) => request<Branch>("/branches", post({ name })),
   employees: () => request<Employee[]>("/employees?limit=100"),
