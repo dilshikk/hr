@@ -1,4 +1,4 @@
-import type { Branch, Candidate, Me, Stage, Vacancy } from "./types";
+import type { Branch, Candidate, Employee, Me, Stage, Vacancy } from "./types";
 
 const BASE = "/api/v1";
 
@@ -30,6 +30,8 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+export const errorText = (e: unknown, fallback: string) => (e instanceof ApiError ? e.message : fallback);
+
 export async function login(initData: string): Promise<void> {
   const res = await request<{ token: string }>("/auth/telegram", {
     method: "POST",
@@ -38,15 +40,23 @@ export async function login(initData: string): Promise<void> {
   token = res.token;
 }
 
+const post = (body: unknown): RequestInit => ({ method: "POST", body: JSON.stringify(body) });
+
 export const api = {
   me: () => request<Me>("/me"),
   candidates: (stage: Stage | "") =>
     request<Candidate[]>(`/candidates?limit=100${stage ? `&stage=${stage}` : ""}`),
   candidate: (id: number) => request<Candidate>(`/candidates/${id}`),
   createCandidate: (body: { full_name: string; phone: string | null; branch_id: number; vacancy_id: number | null }) =>
-    request<Candidate>("/candidates", { method: "POST", body: JSON.stringify(body) }),
+    request<Candidate>("/candidates", post(body)),
   moveStage: (id: number, stage: Stage, reason: string) =>
-    request<Candidate>(`/candidates/${id}/stage`, { method: "POST", body: JSON.stringify({ stage, reason }) }),
+    request<Candidate>(`/candidates/${id}/stage`, post({ stage, reason })),
   vacancies: () => request<Vacancy[]>("/vacancies?limit=100"),
+  createVacancy: (body: { title: string; branch_id: number; description: string }) =>
+    request<Vacancy>("/vacancies", post(body)),
   branches: () => request<Branch[]>("/branches"),
+  createBranch: (name: string) => request<Branch>("/branches", post({ name })),
+  employees: () => request<Employee[]>("/employees?limit=100"),
+  updateEmployee: (id: number, body: { role?: string; branch_id?: number; is_active?: boolean }) =>
+    request<Employee>(`/employees/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
 };
