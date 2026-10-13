@@ -25,8 +25,8 @@ export default function CandidateForm({ me, onDone, onCancel }: Props) {
       .catch(() => setError("Не удалось загрузить филиалы"));
   }, [me.branch_id]);
 
-  // Только вакансии выбранного филиала — сервер другие всё равно отклонит.
-  const branchVacancies = vacancies.filter((v) => v.branch_id === branchId);
+  // Только открытые вакансии выбранного филиала — остальные сервер всё равно отклонит.
+  const branchVacancies = vacancies.filter((v) => v.branch_id === branchId && v.status === "open");
 
   async function submit(e: FormEvent) {
     e.preventDefault();
