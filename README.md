@@ -5,23 +5,33 @@ Telegram HR-бот → полноценная HR-платформа: Telegram Bo
 Текущий бот: https://github.com/dilshikk/mado_jbot
 
 ## Документация
-- [Техническое задание](docs/TZ.md)
-- [План реализации](docs/ROADMAP.md)
-- [Перенос на VPS](docs/VPS_RUNBOOK.md)
+- [Архитектура](docs/ARCHITECTURE.md)
+- [API](docs/API.md)
+- [Развёртывание](docs/DEPLOYMENT.md)
+- [Безопасность](docs/SECURITY.md)
 
 ## Структура
 | Каталог | Назначение |
 |---|---|
-| bot/ | Telegram handlers, keyboards, middleware |
-| api/ | FastAPI routers, dependencies, schemas |
-| domain/ | бизнес-правила HR и pipeline |
-| db/ | модели SQLAlchemy, сессии, репозитории |
-| services/ | уведомления, Google Sheets, AI, файлы |
-| security/ | initData, 2FA, RBAC, сессии |
-| frontend/ | React + TypeScript Mini App |
-| alembic/ | миграции |
-| tests/ | unit, integration, security |
-| deploy/ | systemd, nginx, backup/restore |
+| bot/ | Telegram-бот: handlers, keyboards, middlewares |
+| backend/app/ | FastAPI: api/v1, core, models, schemas, services, integrations, tasks |
+| frontend/ | Telegram Mini App (React + TypeScript) |
+| admin-panel/ | Веб-панель HR и руководства |
+| migrations/ | Миграции Alembic |
+| tests/ | Тесты |
+| deploy/ | systemd, nginx, скрипты, бэкапы |
+| docs/ | Документация |
+
+## Быстрый старт
+```bash
+python -m venv .venv && . .venv/bin/activate
+pip install -e ".[dev]"
+cp .env.example .env
+alembic revision --autogenerate -m "init" && alembic upgrade head
+PYTHONPATH=backend uvicorn app.main:app --reload   # API
+PYTHONPATH=.:backend python -m bot.main            # бот
+pytest
+```
 
 ## Статус
-Этап 0: аудит. Перечисленные в ТЗ функции — требования к разработке, а не реализованный функционал.
+Этап 0–1. Готовы: вход через Telegram, сессии, роли, изоляция филиалов, воронка кандидатов, вакансии. Остальное — заготовки.

@@ -1,20 +1,20 @@
 import asyncio
-import logging
 
 from aiogram import Bot, Dispatcher
 
-from bot.handlers import router
-from config import get_settings
+from app.core.config import get_settings
+from app.core.logging import setup_logging
+from bot.handlers import admin, notifications, start
 
 
 async def main() -> None:
     s = get_settings()
-    logging.basicConfig(level=s.log_level)
+    setup_logging()
     if not s.bot_token:
         raise SystemExit("BOT_TOKEN не задан")
     bot = Bot(s.bot_token)
     dp = Dispatcher()
-    dp.include_router(router)
+    dp.include_routers(start.router, notifications.router, admin.router)
     await dp.start_polling(bot)
 
 
