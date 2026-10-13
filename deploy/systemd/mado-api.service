@@ -1,0 +1,18 @@
+[Unit]
+Description=MADO HR API
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=madohr
+WorkingDirectory=/opt/mado_jbot
+EnvironmentFile=/etc/mado-jbot/mado-jbot.env
+ExecStart=/opt/mado_jbot/.venv/bin/uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,19 @@
+[Unit]
+Description=MADO HR Telegram Bot
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=madohr
+WorkingDirectory=/opt/mado_jbot
+EnvironmentFile=/etc/mado-jbot/mado-jbot.env
+ExecStart=/opt/mado_jbot/.venv/bin/python -m bot.main
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
