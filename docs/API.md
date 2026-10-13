@@ -13,7 +13,7 @@
 | Метод | Путь | Право | Описание |
 |---|---|---|---|
 | GET | `/candidates?stage=&limit=&offset=` | read | Список (только свой филиал, кроме Owner/HR Admin) |
-| POST | `/candidates` | write_candidates | Создать: `full_name, phone?, branch_id, vacancy_id?`; вакансия из другого филиала → 400 |
+| POST | `/candidates` | write_candidates | Создать: `full_name, phone?, branch_id, vacancy_id?`; вакансия из другого филиала или не открытая → 400 |
 | GET | `/candidates/{id}` | read | Карточка; чужой филиал → 404 |
 | POST | `/candidates/{id}/stage` | write_candidates | `{stage, reason}`; недопустимый переход → 400; этап уже изменён другим → 409 |
 
@@ -21,7 +21,10 @@
 | Метод | Путь | Право | Описание |
 |---|---|---|---|
 | GET | `/vacancies` | read | Список по филиалу |
-| POST | `/vacancies` | write_vacancies | Создать: `title, branch_id, description?` |
+| POST | `/vacancies` | write_vacancies | Создать: `title, branch_id, description?`. Создаётся со статусом `draft` |
+| POST | `/vacancies/{id}/status` | write_vacancies | `{status}`: `draft → open/closed`, `open → closed`, `closed → open`; иное → 400 |
+
+Кандидатов можно привязывать только к вакансиям со статусом `open`.
 
 ## Сотрудники
 | Метод | Путь | Право | Описание |
