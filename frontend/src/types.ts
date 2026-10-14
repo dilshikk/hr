@@ -23,6 +23,21 @@ export type Employee = {
   is_active: boolean;
 };
 
+export type InterviewListItem = {
+  id: number;
+  user_id: number;
+  name: string;
+  status: string;
+  q_count: number;
+};
+
+export type Interview = InterviewListItem & {
+  qa_log: { q: string; a: string }[];
+  report_resume: unknown;
+  report_skills: unknown;
+  report_personality: unknown;
+};
+
 export const STAGE_LABELS: Record<Stage, string> = {
   new: "Новый",
   review: "Рассмотрение",
