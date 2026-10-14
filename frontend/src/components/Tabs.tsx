@@ -1,7 +1,8 @@
-export type Tab = "candidates" | "vacancies" | "employees" | "branches";
+export type Tab = "candidates" | "interviews" | "vacancies" | "employees" | "branches";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "candidates", label: "Кандидаты" },
+  { id: "interviews", label: "Интервью" },
   { id: "vacancies", label: "Вакансии" },
   { id: "employees", label: "Сотрудники" },
   { id: "branches", label: "Филиалы" },
