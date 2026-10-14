@@ -71,8 +71,18 @@ export const twofa = {
   },
 };
 
+export type Dashboard = {
+  total: number;
+  new_last_week: number;
+  in_progress: number;
+  hired: number;
+  open_vacancies: number;
+  by_stage: Record<Stage, number>;
+};
+
 export const api = {
   me: () => request<Me>("/me"),
+  dashboard: () => request<Dashboard>("/dashboard/summary"),
   candidates: (stage: Stage | "") =>
     request<Candidate[]>(`/candidates?limit=100${stage ? `&stage=${stage}` : ""}`),
   candidate: (id: number) => request<Candidate>(`/candidates/${id}`),

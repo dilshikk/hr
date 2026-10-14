@@ -3,6 +3,7 @@ import { api, errorText, login } from "./api";
 import { tg } from "./telegram";
 import { isManager, type Me } from "./types";
 import Tabs, { type Tab } from "./components/Tabs";
+import Home from "./pages/Home";
 import CandidateList from "./pages/CandidateList";
 import CandidateCard from "./pages/CandidateCard";
 import CandidateForm from "./pages/CandidateForm";
@@ -25,9 +26,13 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>({ name: "list" });
 
   // После получения сессии (сразу или после 2FA) загружаем профиль.
+  // Руководство начинает с главной, остальные роли - со списка кандидатов (вкладок у них нет).
   const loadMe = useCallback(() => {
     api.me()
-      .then((me) => setAuth({ status: "ok", me }))
+      .then((me) => {
+        if (isManager(me.role)) setTab("home");
+        setAuth({ status: "ok", me });
+      })
       .catch((e: unknown) => setAuth({ status: "error", message: errorText(e, "Не удалось войти") }));
   }, []);
 
@@ -74,6 +79,14 @@ export default function App() {
   return (
     <>
       <main className={manager ? "app with-tabs" : "app"}>
+        {manager && tab === "home" && (
+          <Home
+            onNewCandidate={() => {
+              setTab("candidates");
+              setScreen({ name: "new" });
+            }}
+          />
+        )}
         {tab === "candidates" && (
           <>
             {screen.name === "list" && (

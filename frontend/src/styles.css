@@ -65,6 +65,10 @@ h2 { font-size: 15px; margin: 16px 0 4px; color: var(--hint); font-weight: 500; 
 .stage-rejected { background: var(--danger) !important; color: #fff; }
 .stage-offer { background: var(--accent) !important; color: var(--accent-text); }
 
+.stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 12px 0; }
+.stat { display: flex; flex-direction: column; gap: 4px; border-radius: 12px; padding: 14px; background: var(--bg2); }
+.stat-value { font-size: 28px; font-weight: 700; line-height: 1; }
+
 .details { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 16px 0; }
 .details dt { color: var(--hint); }
 .details dd { margin: 0; }
@@ -79,9 +83,11 @@ input, select, textarea {
 }
 textarea { min-height: 80px; resize: vertical; }
 
+/* Вкладок шесть: на узком экране панель прокручивается, а не сжимает подписи. */
 .tabs {
   position: fixed; left: 0; right: 0; bottom: 0;
-  display: grid; grid-template-columns: repeat(4, 1fr);
+  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(78px, 1fr);
+  overflow-x: auto; scrollbar-width: none;
   background: var(--bg); border-top: 1px solid var(--bg2);
   padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
 }

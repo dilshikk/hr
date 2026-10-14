@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1 import admin, auth, branches, candidates, employees, interviews, reports, vacancies
+from app.api.v1 import admin, auth, branches, candidates, dashboard, employees, interviews, reports, vacancies
 from app.core.config import get_settings
 from app.core.logging import setup_logging
 from app.tasks.cleanup import run_cleanup_loop
@@ -34,7 +34,7 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type"],
 )
 
-for module in (auth, candidates, vacancies, interviews, employees, branches, admin, reports):
+for module in (auth, candidates, vacancies, interviews, employees, branches, admin, reports, dashboard):
     app.include_router(module.router)
 
 
