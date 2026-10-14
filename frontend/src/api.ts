@@ -1,4 +1,4 @@
-import type { Branch, Candidate, Employee, Me, Stage, Vacancy } from "./types";
+import type { Branch, Candidate, Employee, Interview, InterviewListItem, Me, Stage, Vacancy } from "./types";
 
 const BASE = "/api/v1";
 
@@ -60,4 +60,6 @@ export const api = {
   employees: () => request<Employee[]>("/employees?limit=100"),
   updateEmployee: (id: number, body: { role?: string; branch_id?: number; is_active?: boolean }) =>
     request<Employee>(`/employees/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+  interviews: () => request<InterviewListItem[]>("/interviews?limit=100"),
+  interview: (id: number) => request<Interview>(`/interviews/${id}`),
 };
