@@ -4,7 +4,7 @@ from aiogram import Bot, Dispatcher
 
 from app.core.config import get_settings
 from app.core.logging import setup_logging
-from bot.handlers import admin, notifications, start
+from bot.handlers import admin, interview, notifications, start
 
 
 async def main() -> None:
@@ -14,7 +14,7 @@ async def main() -> None:
         raise SystemExit("BOT_TOKEN не задан")
     bot = Bot(s.bot_token)
     dp = Dispatcher()
-    dp.include_routers(start.router, notifications.router, admin.router)
+    dp.include_routers(start.router, interview.router, notifications.router, admin.router)
     await dp.start_polling(bot)
 
 
