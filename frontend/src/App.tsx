@@ -9,6 +9,7 @@ import CandidateForm from "./pages/CandidateForm";
 import VacancyList from "./pages/VacancyList";
 import EmployeeList from "./pages/EmployeeList";
 import BranchList from "./pages/BranchList";
+import InterviewList from "./pages/InterviewList";
 
 type Screen = { name: "list" } | { name: "card"; id: number } | { name: "new" };
 type AuthState = { status: "loading" } | { status: "error"; message: string } | { status: "ok"; me: Me };
@@ -67,6 +68,7 @@ export default function App() {
             )}
           </>
         )}
+        {manager && tab === "interviews" && <InterviewList />}
         {manager && tab === "vacancies" && <VacancyList />}
         {manager && tab === "employees" && <EmployeeList me={me} />}
         {manager && tab === "branches" && <BranchList me={me} />}
