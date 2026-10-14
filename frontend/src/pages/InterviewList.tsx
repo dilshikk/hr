@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { api, errorText } from "../api";
+import { api } from "../api";
 import { useLoad } from "../hooks/useLoad";
-import type { Interview } from "../types";
 
 const STATUS_LABELS: Record<string, string> = { active: "Идёт", done: "Завершено" };
 
@@ -18,15 +17,8 @@ function ReportBlock({ title, value }: { title: string; value: unknown }) {
 }
 
 function InterviewCard({ id, onBack }: { id: number; onBack: () => void }) {
-  const [data, setData] = useState<Interview | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [requested, setRequested] = useState(false);
-
-  // Загружаем один раз при первом показе карточки.
-  if (!requested) {
-    setRequested(true);
-    api.interview(id).then(setData).catch((e: unknown) => setError(errorText(e, "Не удалось загрузить интервью")));
-  }
+  // Карточка создаётся заново для каждого id, поэтому загрузка один раз достаточна.
+  const { data, error } = useLoad(() => api.interview(id), "Не удалось загрузить интервью");
 
   return (
     <section>
@@ -57,7 +49,7 @@ export default function InterviewList() {
   const list = useLoad(api.interviews, "Не удалось загрузить интервью");
   const [openId, setOpenId] = useState<number | null>(null);
 
-  if (openId !== null) return <InterviewCard id={openId} onBack={() => setOpenId(null)} />;
+  if (openId !== null) return <InterviewCard key={openId} id={openId} onBack={() => setOpenId(null)} />;
 
   return (
     <section>
