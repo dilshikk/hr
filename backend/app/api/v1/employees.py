@@ -1,4 +1,4 @@
-"""Сотрудники: назначение ролей и филиалов, блокировка."""
+"""Сотрудники: назначение ролей и филиалов, блокировка, сброс 2FA."""
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,6 +8,7 @@ from app.core.database import get_session
 from app.core.permissions import Perm, can_manage_user
 from app.models import AuditLog, AuthSession, Branch, User
 from app.schemas.employee import EmployeeOut, EmployeeUpdate
+from app.services.two_factor_reset import can_reset_2fa, reset_two_factor
 
 router = APIRouter(prefix="/api/v1/employees", tags=["employees"])
 
@@ -56,5 +57,22 @@ async def update_employee(
         # Права изменились — старые сессии отзываем, чтобы новые права применились сразу.
         await db.execute(update(AuthSession).where(AuthSession.user_id == target.id).values(revoked=True))
         db.add(AuditLog(actor_id=actor.id, action="employee.update", target=f"{target.id} {';'.join(changes)}"[:64]))
+    await db.commit()
+    return target
+
+
+@router.post("/{user_id}/reset-2fa", response_model=EmployeeOut)
+async def reset_employee_2fa(
+    user_id: int,
+    actor: User = Depends(require(Perm.MANAGE_USERS)),
+    db: AsyncSession = Depends(get_session),
+) -> User:
+    """Сброс 2FA для сотрудника, потерявшего телефон и коды восстановления. Только Owner."""
+    target = await db.get(User, user_id)
+    if not target:
+        raise HTTPException(404, "Сотрудник не найден")
+    if not can_reset_2fa(actor.role, actor.id, target.id, target.role):
+        raise HTTPException(403, "Нельзя сбросить 2FA этому сотруднику")
+    await reset_two_factor(db, actor, target)
     await db.commit()
     return target

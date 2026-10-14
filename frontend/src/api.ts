@@ -89,6 +89,7 @@ export const api = {
   employees: () => request<Employee[]>("/employees?limit=100"),
   updateEmployee: (id: number, body: { role?: string; branch_id?: number; is_active?: boolean }) =>
     request<Employee>(`/employees/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+  resetEmployeeTwoFactor: (id: number) => request<Employee>(`/employees/${id}/reset-2fa`, { method: "POST" }),
   interviews: () => request<InterviewListItem[]>("/interviews?limit=100"),
   interview: (id: number) => request<Interview>(`/interviews/${id}`),
 };
