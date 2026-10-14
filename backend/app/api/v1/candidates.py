@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -7,6 +7,7 @@ from app.core.database import get_session
 from app.core.permissions import ALL_BRANCHES, Perm, Role, can_access_branch
 from app.models import AuditLog, Candidate, PipelineEvent, User, Vacancy
 from app.schemas.candidate import CandidateIn, CandidateOut, StageIn
+from app.services.notifications import new_candidate_text, notify_branch, stage_changed_text
 from app.services.pipeline import InvalidTransition, check_transition
 from app.services.vacancy import VacancyStatus
 
@@ -42,6 +43,7 @@ async def list_candidates(
 @router.post("", response_model=CandidateOut, status_code=201)
 async def create_candidate(
     body: CandidateIn,
+    background: BackgroundTasks,
     user: User = Depends(require(Perm.WRITE_CANDIDATES)),
     db: AsyncSession = Depends(get_session),
 ) -> Candidate:
@@ -59,6 +61,8 @@ async def create_candidate(
     await db.flush()
     db.add(AuditLog(actor_id=user.id, action="candidate.create", target=str(cand.id)))
     await db.commit()
+    # Уведомление уходит уже после сохранения и не влияет на ответ API.
+    background.add_task(notify_branch, cand.branch_id, new_candidate_text(cand.full_name), user.id)
     return cand
 
 
@@ -75,6 +79,7 @@ async def get_candidate(
 async def move_stage(
     candidate_id: int,
     body: StageIn,
+    background: BackgroundTasks,
     user: User = Depends(require(Perm.WRITE_CANDIDATES)),
     db: AsyncSession = Depends(get_session),
 ) -> Candidate:
@@ -105,4 +110,6 @@ async def move_stage(
     ))
     await db.commit()
     await db.refresh(cand)
+    text = stage_changed_text(cand.full_name, old_stage, new_stage.value, body.reason)
+    background.add_task(notify_branch, cand.branch_id, text, user.id)
     return cand
