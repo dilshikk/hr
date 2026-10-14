@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { api, errorText, login } from "./api";
 import { tg } from "./telegram";
 import { isManager, type Me } from "./types";
@@ -10,14 +10,26 @@ import VacancyList from "./pages/VacancyList";
 import EmployeeList from "./pages/EmployeeList";
 import BranchList from "./pages/BranchList";
 import InterviewList from "./pages/InterviewList";
+import TwoFactor from "./pages/TwoFactor";
 
 type Screen = { name: "list" } | { name: "card"; id: number } | { name: "new" };
-type AuthState = { status: "loading" } | { status: "error"; message: string } | { status: "ok"; me: Me };
+type AuthState =
+  | { status: "loading" }
+  | { status: "error"; message: string }
+  | { status: "twofa"; mode: "setup" | "verify"; challenge: string }
+  | { status: "ok"; me: Me };
 
 export default function App() {
   const [auth, setAuth] = useState<AuthState>({ status: "loading" });
   const [tab, setTab] = useState<Tab>("candidates");
   const [screen, setScreen] = useState<Screen>({ name: "list" });
+
+  // После получения сессии (сразу или после 2FA) загружаем профиль.
+  const loadMe = useCallback(() => {
+    api.me()
+      .then((me) => setAuth({ status: "ok", me }))
+      .catch((e: unknown) => setAuth({ status: "error", message: errorText(e, "Не удалось войти") }));
+  }, []);
 
   // Вход один раз при открытии Mini App.
   useEffect(() => {
@@ -28,10 +40,12 @@ export default function App() {
       return;
     }
     login(tg.initData)
-      .then(api.me)
-      .then((me) => setAuth({ status: "ok", me }))
+      .then((result) => {
+        if (result.status === "twofa") setAuth(result);
+        else loadMe();
+      })
       .catch((e: unknown) => setAuth({ status: "error", message: errorText(e, "Не удалось войти") }));
-  }, []);
+  }, [loadMe]);
 
   // Системная кнопка «Назад» Telegram на вложенных экранах кандидатов.
   useEffect(() => {
@@ -49,6 +63,9 @@ export default function App() {
 
   if (auth.status === "loading") return <div className="center muted">Вход…</div>;
   if (auth.status === "error") return <div className="center error">{auth.message}</div>;
+  if (auth.status === "twofa") {
+    return <TwoFactor mode={auth.mode} challenge={auth.challenge} onDone={loadMe} />;
+  }
 
   const { me } = auth;
   const manager = isManager(me.role);

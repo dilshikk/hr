@@ -32,15 +32,44 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 export const errorText = (e: unknown, fallback: string) => (e instanceof ApiError ? e.message : fallback);
 
-export async function login(initData: string): Promise<void> {
-  const res = await request<{ token: string }>("/auth/telegram", {
+type SessionResponse = {
+  token: string | null;
+  role: string;
+  twofa: "setup" | "verify" | null;
+  challenge: string | null;
+  recovery_codes: string[] | null;
+};
+
+/** Первый шаг входа. Owner и HR Admin получают не сессию, а задание «введите код». */
+export type LoginResult =
+  | { status: "ok" }
+  | { status: "twofa"; mode: "setup" | "verify"; challenge: string };
+
+export async function login(initData: string): Promise<LoginResult> {
+  const res = await request<SessionResponse>("/auth/telegram", {
     method: "POST",
     body: JSON.stringify({ init_data: initData }),
   });
+  if (res.twofa && res.challenge) return { status: "twofa", mode: res.twofa, challenge: res.challenge };
   token = res.token;
+  return { status: "ok" };
 }
 
 const post = (body: unknown): RequestInit => ({ method: "POST", body: JSON.stringify(body) });
+
+export const twofa = {
+  setup: (challenge: string) => request<{ secret: string; uri: string }>("/auth/2fa/setup", post({ challenge })),
+  /** Подтверждает первый код; возвращает коды восстановления (показываются один раз). */
+  async confirm(challenge: string, code: string): Promise<string[]> {
+    const res = await request<SessionResponse>("/auth/2fa/confirm", post({ challenge, code }));
+    token = res.token;
+    return res.recovery_codes ?? [];
+  },
+  async verify(challenge: string, code: string): Promise<void> {
+    const res = await request<SessionResponse>("/auth/2fa/verify", post({ challenge, code }));
+    token = res.token;
+  },
+};
 
 export const api = {
   me: () => request<Me>("/me"),
