@@ -1,4 +1,4 @@
-"""Служебные таблицы: сессии и журнал действий."""
+"""Служебные таблицы: сессии, журнал действий, 2FA."""
 from datetime import datetime
 
 from sqlalchemy import DateTime, ForeignKey, String
@@ -24,4 +24,26 @@ class AuditLog(Base):
     actor_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     action: Mapped[str] = mapped_column(String(64), index=True)
     target: Mapped[str] = mapped_column(String(64), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class UserTotp(Base):
+    """Секрет 2FA сотрудника. Хранится только в зашифрованном виде (TOTP_ENCRYPTION_KEY)."""
+    __tablename__ = "user_totp"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True, index=True)
+    secret_enc: Mapped[str] = mapped_column(String(255))
+    confirmed: Mapped[bool] = mapped_column(default=False)
+    # Последний принятый шаг времени: тот же код второй раз не принимается.
+    last_step: Mapped[int] = mapped_column(default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class RecoveryCode(Base):
+    """Одноразовый код восстановления. Хранится только хеш."""
+    __tablename__ = "recovery_codes"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    code_hash: Mapped[str] = mapped_column(String(64), index=True)
+    used: Mapped[bool] = mapped_column(default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

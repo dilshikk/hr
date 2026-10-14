@@ -4,36 +4,51 @@ from pathlib import Path
 
 from app.models import Base
 
-MIGRATION = Path(__file__).resolve().parent.parent / "migrations" / "versions" / "0001_initial_schema.py"
+VERSIONS = Path(__file__).resolve().parent.parent / "migrations" / "versions"
 
 
-def _source() -> str:
-    return MIGRATION.read_text(encoding="utf-8")
+def _files() -> list[Path]:
+    return sorted(VERSIONS.glob("0*.py"))
 
 
-def test_migration_creates_every_model_table():
+def _sources() -> list[str]:
+    return [p.read_text(encoding="utf-8") for p in _files()]
+
+
+def _load(path: Path):
+    spec = importlib.util.spec_from_file_location(f"migration_{path.stem}", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_migrations_create_every_model_table():
     # Если добавили модель, но забыли миграцию, тест упадёт.
-    created = set(re.findall(r'op\.create_table\(\s*"(\w+)"', _source()))
+    created: set[str] = set()
+    for source in _sources():
+        created |= set(re.findall(r'op\.create_table\(\s*"(\w+)"', source))
     assert created == set(Base.metadata.tables.keys())
 
 
 def test_migration_columns_match_models():
-    source = _source()
+    sources = _sources()
     for name, table in Base.metadata.tables.items():
+        source = next(s for s in sources if re.search(rf'op\.create_table\(\s*"{name}"', s))
         block = source.split(f'"{name}",', 1)[1].split("op.create_table", 1)[0]
         for column in table.columns.keys():
             assert f'"{column}"' in block, f"{name}.{column} отсутствует в миграции"
 
 
-def test_downgrade_drops_every_table():
-    downgrade = _source().split("def downgrade", 1)[1]
-    dropped = set(re.findall(r'"(\w+)"', downgrade))
+def test_downgrades_drop_every_table():
+    dropped: set[str] = set()
+    for source in _sources():
+        dropped |= set(re.findall(r'"(\w+)"', source.split("def downgrade", 1)[1]))
     assert set(Base.metadata.tables.keys()) <= dropped
 
 
-def test_migration_is_loadable_and_is_first_revision():
-    spec = importlib.util.spec_from_file_location("migration_0001", MIGRATION)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    assert module.revision == "0001"
-    assert module.down_revision is None
+def test_migrations_form_a_single_chain():
+    modules = [_load(p) for p in _files()]
+    assert modules[0].revision == "0001"
+    assert modules[0].down_revision is None
+    for previous, current in zip(modules, modules[1:]):
+        assert current.down_revision == previous.revision
