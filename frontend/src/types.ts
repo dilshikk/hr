@@ -90,3 +90,8 @@ export function canEditEmployee(me: Me, target: Employee): boolean {
   if (me.role === "owner") return true;
   return me.role === "hr_admin" && !isManager(target.role);
 }
+
+/** Сброс 2FA: только Owner, только другому сотруднику с обязательной 2FA (как can_reset_2fa на сервере). */
+export function canResetTwoFactor(me: Me, target: Employee): boolean {
+  return isOwner(me.role) && me.id !== target.id && isManager(target.role);
+}
