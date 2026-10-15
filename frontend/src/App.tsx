@@ -11,6 +11,7 @@ import VacancyList from "./pages/VacancyList";
 import EmployeeList from "./pages/EmployeeList";
 import BranchList from "./pages/BranchList";
 import InterviewList from "./pages/InterviewList";
+import AuditLog from "./pages/AuditLog";
 import TwoFactor from "./pages/TwoFactor";
 
 type Screen = { name: "list" } | { name: "card"; id: number } | { name: "new" };
@@ -102,6 +103,7 @@ export default function App() {
         {manager && tab === "vacancies" && <VacancyList />}
         {manager && tab === "employees" && <EmployeeList me={me} />}
         {manager && tab === "branches" && <BranchList me={me} />}
+        {manager && tab === "audit" && <AuditLog />}
       </main>
       {manager && (
         <Tabs

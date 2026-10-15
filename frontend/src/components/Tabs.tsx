@@ -1,4 +1,4 @@
-export type Tab = "home" | "candidates" | "interviews" | "vacancies" | "employees" | "branches";
+export type Tab = "home" | "candidates" | "interviews" | "vacancies" | "employees" | "branches" | "audit";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "home", label: "Главная" },
@@ -7,6 +7,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "vacancies", label: "Вакансии" },
   { id: "employees", label: "Сотрудники" },
   { id: "branches", label: "Филиалы" },
+  { id: "audit", label: "Журнал" },
 ];
 
 type Props = { active: Tab; onChange: (t: Tab) => void };

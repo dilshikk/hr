@@ -80,9 +80,22 @@ export type Dashboard = {
   by_stage: Record<Stage, number>;
 };
 
+export type AuditEntry = {
+  id: number;
+  actor_id: number | null;
+  actor_name: string | null;
+  action: string;
+  target: string;
+  created_at: string;
+};
+
 export const api = {
   me: () => request<Me>("/me"),
   dashboard: () => request<Dashboard>("/dashboard/summary"),
+  audit: (action: string, offset: number, limit: number) =>
+    request<AuditEntry[]>(
+      `/audit?limit=${limit}&offset=${offset}${action ? `&action=${encodeURIComponent(action)}` : ""}`,
+    ),
   candidates: (stage: Stage | "") =>
     request<Candidate[]>(`/candidates?limit=100${stage ? `&stage=${stage}` : ""}`),
   candidate: (id: number) => request<Candidate>(`/candidates/${id}`),
