@@ -7,6 +7,7 @@ import Home from "./pages/Home";
 import CandidateList from "./pages/CandidateList";
 import CandidateCard from "./pages/CandidateCard";
 import CandidateForm from "./pages/CandidateForm";
+import Schedule from "./pages/Schedule";
 import VacancyList from "./pages/VacancyList";
 import EmployeeList from "./pages/EmployeeList";
 import BranchList from "./pages/BranchList";
@@ -99,6 +100,7 @@ export default function App() {
             )}
           </>
         )}
+        {manager && tab === "schedule" && <Schedule />}
         {manager && tab === "interviews" && <InterviewList />}
         {manager && tab === "vacancies" && <VacancyList />}
         {manager && tab === "employees" && <EmployeeList me={me} />}

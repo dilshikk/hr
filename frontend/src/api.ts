@@ -89,6 +89,30 @@ export type AuditEntry = {
   created_at: string;
 };
 
+export type ScheduleStatus = "scheduled" | "done" | "cancelled";
+
+export type ScheduledInterview = {
+  id: number;
+  candidate_id: number;
+  candidate_name: string;
+  interviewer_id: number;
+  interviewer_name: string;
+  starts_at: string;
+  duration_min: number;
+  format: "offline" | "online";
+  status: ScheduleStatus;
+  score: number | null;
+  comment: string;
+};
+
+export type NewScheduledInterview = {
+  candidate_id: number;
+  interviewer_id: number;
+  starts_at: string;
+  duration_min: number;
+  format: "offline" | "online";
+};
+
 export const api = {
   me: () => request<Me>("/me"),
   dashboard: () => request<Dashboard>("/dashboard/summary"),
@@ -96,6 +120,11 @@ export const api = {
     request<AuditEntry[]>(
       `/audit?limit=${limit}&offset=${offset}${action ? `&action=${encodeURIComponent(action)}` : ""}`,
     ),
+  schedule: (status: ScheduleStatus) => request<ScheduledInterview[]>(`/schedule?limit=100&status=${status}`),
+  createInterview: (body: NewScheduledInterview) => request<ScheduledInterview>("/schedule", post(body)),
+  cancelInterview: (id: number) => request<ScheduledInterview>(`/schedule/${id}/cancel`, { method: "POST" }),
+  scoreInterview: (id: number, score: number, comment: string) =>
+    request<ScheduledInterview>(`/schedule/${id}/score`, post({ score, comment })),
   candidates: (stage: Stage | "") =>
     request<Candidate[]>(`/candidates?limit=100${stage ? `&stage=${stage}` : ""}`),
   candidate: (id: number) => request<Candidate>(`/candidates/${id}`),

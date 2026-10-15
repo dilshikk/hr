@@ -1,4 +1,4 @@
-"""Найм: вакансии, кандидаты, история этапов."""
+"""Найм: вакансии, кандидаты, история этапов, календарь интервью."""
 from datetime import datetime
 
 from sqlalchemy import BigInteger, DateTime, ForeignKey, String, Text
@@ -42,3 +42,21 @@ class PipelineEvent(Base):
     reason: Mapped[str] = mapped_column(String(300), default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     candidate: Mapped[Candidate] = relationship(back_populates="events")
+
+
+class ScheduledInterview(Base):
+    """Назначенное интервью с оценкой. Отдельно от опросов в боте (InterviewSession)."""
+    __tablename__ = "scheduled_interviews"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    candidate_id: Mapped[int] = mapped_column(ForeignKey("candidates.id"), index=True)
+    # Филиал копируется с кандидата, чтобы изоляцию проверять без лишних запросов.
+    branch_id: Mapped[int] = mapped_column(ForeignKey("branches.id"), index=True)
+    interviewer_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    duration_min: Mapped[int] = mapped_column(default=30)
+    format: Mapped[str] = mapped_column(String(16), default="offline")
+    status: Mapped[str] = mapped_column(String(16), default="scheduled", index=True)
+    score: Mapped[int | None] = mapped_column(nullable=True)
+    comment: Mapped[str] = mapped_column(String(500), default="")
+    created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

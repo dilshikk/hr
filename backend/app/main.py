@@ -16,6 +16,7 @@ from app.api.v1 import (
     employees,
     interviews,
     reports,
+    schedule,
     vacancies,
 )
 from app.core.config import get_settings
@@ -45,7 +46,9 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type"],
 )
 
-for module in (auth, candidates, vacancies, interviews, employees, branches, admin, reports, dashboard, audit):
+for module in (
+    auth, candidates, vacancies, interviews, employees, branches, admin, reports, dashboard, audit, schedule,
+):
     app.include_router(module.router)
 
 

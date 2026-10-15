@@ -1,9 +1,10 @@
-export type Tab = "home" | "candidates" | "interviews" | "vacancies" | "employees" | "branches" | "audit";
+export type Tab = "home" | "candidates" | "schedule" | "interviews" | "vacancies" | "employees" | "branches" | "audit";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "home", label: "Главная" },
   { id: "candidates", label: "Кандидаты" },
-  { id: "interviews", label: "Интервью" },
+  { id: "schedule", label: "Календарь" },
+  { id: "interviews", label: "Опросы" },
   { id: "vacancies", label: "Вакансии" },
   { id: "employees", label: "Сотрудники" },
   { id: "branches", label: "Филиалы" },
