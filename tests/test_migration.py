@@ -32,11 +32,14 @@ def test_migrations_create_every_model_table():
 
 def test_migration_columns_match_models():
     sources = _sources()
+    all_source = "\n".join(sources)
     for name, table in Base.metadata.tables.items():
         source = next(s for s in sources if re.search(rf'op\.create_table\(\s*"{name}"', s))
         block = source.split(f'"{name}",', 1)[1].split("op.create_table", 1)[0]
+        # Колонки, добавленные позже отдельной командой add_column, тоже считаются.
+        added = set(re.findall(rf'op\.add_column\(\s*"{name}",\s*sa\.Column\(\s*"(\w+)"', all_source))
         for column in table.columns.keys():
-            assert f'"{column}"' in block, f"{name}.{column} отсутствует в миграции"
+            assert f'"{column}"' in block or column in added, f"{name}.{column} отсутствует в миграции"
 
 
 def test_downgrades_drop_every_table():
@@ -44,6 +47,15 @@ def test_downgrades_drop_every_table():
     for source in _sources():
         dropped |= set(re.findall(r'"(\w+)"', source.split("def downgrade", 1)[1]))
     assert set(Base.metadata.tables.keys()) <= dropped
+
+
+def test_downgrade_removes_added_columns():
+    source = (VERSIONS / "0004_reminders_documents_links.py").read_text(encoding="utf-8")
+    added = re.findall(r'op\.add_column\(\s*"(\w+)",\s*sa\.Column\(\s*"(\w+)"', source)
+    assert added
+    down = source.split("def downgrade", 1)[1]
+    for table, column in added:
+        assert f'op.drop_column("{table}", "{column}")' in down
 
 
 def test_migrations_form_a_single_chain():
