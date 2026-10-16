@@ -1,4 +1,4 @@
-"""Найм: вакансии, кандидаты, история этапов, календарь интервью."""
+"""Найм: вакансии, кандидаты, история этапов, календарь интервью, документы."""
 from datetime import datetime
 
 from sqlalchemy import BigInteger, DateTime, ForeignKey, String, Text
@@ -28,6 +28,10 @@ class Candidate(Base, TimestampMixin):
     stage: Mapped[str] = mapped_column(String(24), default="new", index=True)
     assignee_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     notes: Mapped[str] = mapped_column(Text, default="")
+    # Напоминание «связаться с кандидатом»: получает ответственный (или сотрудники филиала).
+    next_contact_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True, nullable=True)
+    next_contact_note: Mapped[str] = mapped_column(String(300), default="")
+    reminder_sent: Mapped[bool] = mapped_column(default=False)
     events: Mapped[list["PipelineEvent"]] = relationship(back_populates="candidate")
 
 
@@ -59,4 +63,20 @@ class ScheduledInterview(Base):
     score: Mapped[int | None] = mapped_column(nullable=True)
     comment: Mapped[str] = mapped_column(String(500), default="")
     created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    # Напоминание интервьюеру за час до начала отправляется один раз.
+    reminder_sent: Mapped[bool] = mapped_column(default=False)
+
+
+class CandidateDocument(Base):
+    """Метаданные загруженного файла. Сам файл лежит на диске под случайным именем stored_name."""
+    __tablename__ = "candidate_documents"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    candidate_id: Mapped[int] = mapped_column(ForeignKey("candidates.id"), index=True)
+    filename: Mapped[str] = mapped_column(String(200))
+    content_type: Mapped[str] = mapped_column(String(64))
+    size_bytes: Mapped[int] = mapped_column()
+    sha256: Mapped[str] = mapped_column(String(64))
+    stored_name: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    uploaded_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

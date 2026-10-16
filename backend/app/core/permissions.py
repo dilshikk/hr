@@ -17,6 +17,7 @@ class Perm(StrEnum):
     READ_AUDIT = "read_audit"
     MANAGE_USERS = "manage_users"
     MANAGE_BRANCHES = "manage_branches"
+    EXPORT = "export"  # выгрузка данных кандидатов (CSV); каждый экспорт пишется в журнал
 
 
 ALL_BRANCHES = {Role.OWNER, Role.HR_ADMIN}

@@ -59,6 +59,8 @@ class InterviewSession(Base):
     user_id: Mapped[int] = mapped_column(
         BigInteger, ForeignKey("bot_users.user_id"), index=True
     )
+    # Кандидат HR-платформы, к которому относится опрос (автоматически по Telegram ID или вручную).
+    candidate_id: Mapped[int | None] = mapped_column(ForeignKey("candidates.id"), index=True, nullable=True)
     qa_log: Mapped[list] = mapped_column(JSON, default=list)
     q_count: Mapped[int] = mapped_column(Integer, default=0)
     status: Mapped[str] = mapped_column(String(16), default="active")
